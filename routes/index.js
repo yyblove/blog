@@ -7,18 +7,20 @@ Post = require('../modules/post');
 
 var multer = require('multer');
 var storage = multer.diskStorage({
-    destination: function (req, file , callback) {
+    // 文件路径
+    destination: function (req, file, callback) {
         callback(null, './public/images')
     },
-    filename : function (req, file, callback) {
+
+    // 文件名
+    filename: function (req, file, callback) {
         callback(null, file.originalname);
     }
 });
-var upload = multer({dest: './public/images'})
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
-    Post.get(null, function (err, posts) {
+    Post.getAll(null, function (err, posts) {
         if (err)
             posts = [];
 
@@ -140,11 +142,49 @@ router.get('/upload', function (req, res, next) {
 });
 
 router.post('/upload', checkLogin);
-router.post('/upload', multer({storage:storage}).array('photos', 12), function (req, res) {
+router.post('/upload', multer({storage: storage}).array('photos', 12), function (req, res) {
     req.flash('success', '上传文件成功');
     res.redirect('/upload');
 });
 
+router.get('/u/:name', function (req, res) {
+    User.get(req.params.name, function (err, user) {
+        if (!user) {
+            req.flash('error', '用户名不存在');
+            return res.redirect('/');
+        }
+
+        Post.getAll(user.name, function (err, posts) {
+            if (err) {
+                req.flash('error', err);
+                return res.redirect('/');
+            }
+            res.render('user', {
+                title: req.params.name,
+                posts: posts,
+                user: req.session.user,
+                success: req.flash('success').toString(),
+                error: req.flash('error').toString()
+            });
+        });
+    });
+});
+
+router.get('/u/:name/:day/:title', function (req, res) {
+    Post.getOne(req.params.name, req.params.title, req.params.day, function (err, post) {
+        if (err) {
+            req.flash('error', err);
+            return res.redirect('/');
+        }
+        res.render('article', {
+            title: req.params.title,
+            post: post,
+            user : req.session.user,
+            success : req.flash('success').toString(),
+            error : req.flash('error').toString()
+        });
+    });
+});
 
 function ret(name, req) {
     return {
@@ -154,6 +194,7 @@ function ret(name, req) {
         error: req.flash('error').toString()
     }
 }
+
 function checkLogin(req, res, next) {
     if (!req.session.user) {
         req.flash('error', '未登录');
