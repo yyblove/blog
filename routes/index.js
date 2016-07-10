@@ -1,8 +1,20 @@
 var express = require('express');
 var router = express.Router();
 var cryto = require('crypto');
+
 User = require('../modules/user');
 Post = require('../modules/post');
+
+var multer = require('multer');
+var storage = multer.diskStorage({
+    destination: function (req, file , callback) {
+        callback(null, './public/images')
+    },
+    filename : function (req, file, callback) {
+        callback(null, file.originalname);
+    }
+});
+var upload = multer({dest: './public/images'})
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
@@ -121,6 +133,18 @@ router.get('/logout', function (req, res, next) {
     req.flash('success', "登出成功！！！");
     res.redirect("/");
 });
+
+router.get('/upload', checkLogin);
+router.get('/upload', function (req, res, next) {
+    res.render('upload', ret('文件上传', req));
+});
+
+router.post('/upload', checkLogin);
+router.post('/upload', multer({storage:storage}).array('photos', 12), function (req, res) {
+    req.flash('success', '上传文件成功');
+    res.redirect('/upload');
+});
+
 
 function ret(name, req) {
     return {

@@ -8,7 +8,7 @@ var bodyParser = require('body-parser');
 var flash = require('connect-flash');
 
 var routes = require('./routes/index');
-var users = require('./routes/users');
+// var users = require('./routes/users');
 var settings = require('./settings');
 
 var session = require('express-session');
@@ -27,6 +27,7 @@ app.set('view engine', 'ejs');
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
+// app.use(bodyParser({keepExtensions:true, upload: './public/images'}));
 app.use(cookieParser());
 
 
