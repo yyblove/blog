@@ -15,6 +15,7 @@ var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
 
 require('./modules/common');
+require('events').EventEmitter.prototype.maxListeners = 0;
 
 var app = express();
 
@@ -86,6 +87,8 @@ app.use(function (err, req, res, next) {
         error: {}
     });
 });
+
+
 
 
 module.exports = app;

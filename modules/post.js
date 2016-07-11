@@ -28,7 +28,8 @@ Post.prototype.save = function (callback) {
         name: this.name,
         time: time,
         title: this.title,
-        post: this.post
+        post: this.post,
+        comments: []
     };
 
     mongodb.open(function (err, db) {
@@ -82,12 +83,12 @@ Post.getAll = function (name, callback) {
     });
 };
 
-Post.getOne = function (name, title, day, callback) {
+Post.getOne = function (name, day, title, callback) {
     console.log(name + " -- " + title + "----" + day);
     mongodb.open(function (err, db) {
         if (err) return callback(err);
 
-        db.collection('post', function (err, collection) {
+        db.collection(TABLE.TB_POST, function (err, collection) {
             if (err) {
                 mongodb.close();
                 return callback(err);
@@ -96,13 +97,112 @@ Post.getOne = function (name, title, day, callback) {
             collection.findOne({
                 name: name,
                 title: title,
-                "time.day":day
+                "time.day": day
             }, function (err, doc) {
                 mongodb.close();
                 if (err) return callback(err);
                 doc.post = markdown.toHTML(doc.post);
+                if (doc.comments) {
+                    doc.comments.forEach(function (comment) {
+                        comment.content = markdown.toHTML(comment.content);
+                    });
+                } else {
+                    doc.comments = [];
+                }
                 callback(null, doc);
             });
         });
     });
 };
+
+Post.edit = function (name, day, title, callback) {
+    mongodb.open(function (err, db) {
+        if (err) {
+            return callback(err);
+        }
+        db.collection(TABLE.TB_POST, function (err, collection) {
+            if (err) return callback(err);
+
+            collection.findOne({
+                "name": name,
+                "title": title,
+                "time.day": day
+            }, function (err, doc) {
+                mongodb.close();
+                if (err) return callback(err);
+                callback(null, doc);
+            });
+        });
+    });
+};
+
+Post.update = function (name, day, title, post, callback) {
+    mongodb.open(function (err, db) {
+        if (err) {
+            return callback(err);
+        }
+        db.collection(TABLE.TB_POST, function (err, collection) {
+            if (err) {
+                mongodb.close();
+                return callback(err);
+            }
+            collection.update({
+                "name": name,
+                "title": title,
+                "time.day": day
+            }, {$set: {post: post}}, function (err) {
+                mongodb.close();
+                console.log(err);
+
+                if (err) return callback(err);
+                callback(null);
+            });
+        });
+    });
+};
+
+Post.remove = function (name, day, title, callback) {
+    mongodb.open(function (err, db) {
+        if (err) {
+            return callback(err);
+        }
+        db.collection(TABLE.TB_POST, function (err, collection) {
+            if (err) {
+                mongodb.close();
+                return callback(err);
+            }
+            collection.remove({
+                "name": name,
+                "title": title,
+                "time.day": day
+            }, {w: 1}, function (err) {
+                mongodb.close();
+                if (err)
+                    return callback(err);
+                callback(null);
+            });
+        });
+    });
+};
+
+function open(callback) {
+    mongodb.open(function (err, db) {
+        if (err) {
+            return callback(err);
+        }
+        db.collection(TABLE.TB_POST, callback);
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -4,6 +4,7 @@ var cryto = require('crypto');
 
 User = require('../modules/user');
 Post = require('../modules/post');
+Comment = require('../modules/comment');
 
 var multer = require('multer');
 var storage = multer.diskStorage({
@@ -115,7 +116,7 @@ router.get('/post', function (req, res, next) {
     res.render('post', ret('发表', req));
 });
 
-router.get('/post', checkLogin);
+router.post('/post', checkLogin);
 router.post('/post', function (req, res, next) {
     var currentUser = req.session.user;
     var post = new Post(currentUser.name, req.body.title, req.body.post);
@@ -171,7 +172,7 @@ router.get('/u/:name', function (req, res) {
 });
 
 router.get('/u/:name/:day/:title', function (req, res) {
-    Post.getOne(req.params.name, req.params.title, req.params.day, function (err, post) {
+    Post.getOne(req.params.name, req.params.day, req.params.title, function (err, post) {
         if (err) {
             req.flash('error', err);
             return res.redirect('/');
@@ -179,11 +180,85 @@ router.get('/u/:name/:day/:title', function (req, res) {
         res.render('article', {
             title: req.params.title,
             post: post,
-            user : req.session.user,
-            success : req.flash('success').toString(),
-            error : req.flash('error').toString()
+            user: req.session.user,
+            success: req.flash('success').toString(),
+            error: req.flash('error').toString()
         });
     });
+});
+
+router.get('/edit/:name/:day/:title', checkLogin);
+router.get('/edit/:name/:day/:title', function (req, res) {
+    Post.edit(req.params.name, req.params.day, req.params.title, function (err, post) {
+        if (err) {
+            req.flash('error', err);
+            return res.redirect('back');
+        }
+        res.render('edit', {
+            title: '编辑',
+            post: post,
+            user: req.session.user,
+            success: req.flash('success').toString(),
+            error: req.flash('error').toString()
+        });
+    });
+});
+
+router.post('/edit/:name/:day/:title', checkLogin);
+router.post('/edit/:name/:day/:title', function (req, res) {
+    var currentUser = req.session.user;
+    Post.update(currentUser.name, req.params.day, req.params.title, req.body.post.trim(), function (err) {
+        var url = "/u/" + req.params.name + "/" + req.params.day + "/" + req.params.title;
+        if (err) {
+            req.flash("error", err);
+            return res.redirect(url);
+        }
+        req.flash('success', '修改成功！');
+        res.redirect(url);
+    });
+});
+
+router.get('/remove/:name/:day/:title', checkLogin);
+router.get('/remove/:name/:day/:title', function (req, res) {
+    var currentUser = req.session.user;
+    Post.remove(currentUser.name, req.params.day, req.params.title, function (err) {
+        if (err) {
+            req.flash("error", err);
+            return res.redirect('back');
+        }
+        req.flash('success', '修改成功！');
+        res.redirect('/');
+    });
+});
+
+router.post('/u/:name/:day/:title', checkLogin);
+router.post('/u/:name/:day/:title', function (req, res) {
+    var date = new Date();
+    var year = date.getFullYear();
+    var month = date.getMonth() < 9 ? '0' + (date.getMonth() + 1) : date.getMonth();
+    var day = date.getDate();
+    var hours = date.getHours();
+    var minutes = date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes();
+
+    var time = year + "-" + month + "-" + day + " " + hours + ":" + minutes;
+    var comment = {
+        name: req.body.name,
+        email: req.body.email,
+        website: req.body.website,
+        time: time,
+        content: req.body.content
+    };
+
+    var newComment = new Comment(req.params.name, req.params.day, req.params.title, comment);
+    newComment.save(function (err) {
+        if (err) {
+            req.flash("error", err);
+            return res.redirect("/");
+        }
+        req.flash("success", '留言成功');
+        res.redirect("back");
+    });
+
 });
 
 function ret(name, req) {
