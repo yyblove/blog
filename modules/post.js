@@ -83,6 +83,47 @@ Post.getAll = function (name, callback) {
     });
 };
 
+Post.getTen = function (name, page, callback) {
+
+    mongodb.open(function (err, db) {
+        if (err) {
+            return callback(err);
+        }
+
+        db.collection(TABLE.TB_POST, function (err, collection) {
+            if (err) {
+                mongodb.close();
+                return callback(err);
+            }
+
+            var query = {};
+            if (name) {
+                query.name = name;
+            }
+            console.log(name);
+
+            collection.count(query, function (err, total) {
+                collection.find(query, {
+                    skip: (page - 1) * 10,
+                    limit: 10
+                }).sort({time: -1}).toArray(function (err, docs) {
+                    mongodb.close();
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    if (docs) {
+                        docs.forEach(function (doc) {
+                            doc.post = markdown.toHTML(doc.post);
+                        });
+                    }
+                    callback(null, docs, total);
+                });
+            });
+        });
+    });
+};
+
 Post.getOne = function (name, day, title, callback) {
     console.log(name + " -- " + title + "----" + day);
     mongodb.open(function (err, db) {
@@ -101,13 +142,15 @@ Post.getOne = function (name, day, title, callback) {
             }, function (err, doc) {
                 mongodb.close();
                 if (err) return callback(err);
-                doc.post = markdown.toHTML(doc.post);
-                if (doc.comments) {
-                    doc.comments.forEach(function (comment) {
-                        comment.content = markdown.toHTML(comment.content);
-                    });
-                } else {
-                    doc.comments = [];
+                if (doc) {
+                    doc.post = markdown.toHTML(doc.post);
+                    if (doc.comments) {
+                        doc.comments.forEach(function (comment) {
+                            comment.content = markdown.toHTML(comment.content);
+                        });
+                    } else {
+                        doc.comments = [];
+                    }
                 }
                 callback(null, doc);
             });
@@ -180,6 +223,33 @@ Post.remove = function (name, day, title, callback) {
                 if (err)
                     return callback(err);
                 callback(null);
+            });
+        });
+    });
+};
+
+Post.getArchive = function (callback) {
+    mongodb.open(function (err, db) {
+        if (err) {
+            return callback(err);
+        }
+        db.collection(TABLE.TB_POST, function (err, collection) {
+            if(err){
+                mongodb.close();
+                return callback(err);
+            }
+
+            collection.find({}, {
+                "name":1,
+                time:1,
+                title:1
+            }).sort({time : -1}).toArray(function (err, docs) {
+                mongodb.close();
+                if(err){
+                    return callback(err);
+                }
+
+                callback(null, docs);
             });
         });
     });

@@ -5,12 +5,27 @@ var cryto = require('crypto');
 User = require('../modules/user');
 Post = require('../modules/post');
 Comment = require('../modules/comment');
-
+var fs = require('fs');
 var multer = require('multer');
+
 var storage = multer.diskStorage({
     // 文件路径
     destination: function (req, file, callback) {
-        callback(null, './public/images')
+
+        callback(null, './public/images');
+        // 生成目标文件夹
+        // var destDir = '/home/yyb/work/blog/public/images';
+        // 判断文件夹是否存在
+        // fs.stat(destDir, function(err){
+        //     if (err) {
+        //         mkdirp(destDir, function(err){
+        //             if (err) {
+        //                 return callback(err);
+        //             }
+        //         });
+        //     }
+        // });
+        // callback(null, destDir);
     },
 
     // 文件名
@@ -21,18 +36,37 @@ var storage = multer.diskStorage({
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
-    Post.getAll(null, function (err, posts) {
-        if (err)
+    var page = req.query.p ? parseInt(req.query.p) : 1;
+
+    Post.getTen(null, page, function (err, posts, total) {
+        if (err) {
             posts = [];
+        }
 
         res.render('index', {
-            title: '主页',
-            user: req.session.user,
+            title: "主页",
             posts: posts,
+            page: page,
+            isFirstPage: (page - 1) == 0,
+            isLastPage: ((page - 1) * 10 + posts.length) == total,
+            user: req.session.user,
             success: req.flash("success").toString(),
             error: req.flash("error").toString()
         });
     });
+
+    // Post.getAll(null, function (err, posts) {
+    //     if (err)
+    //         posts = [];
+    //
+    //     res.render('index', {
+    //         title: '主页',
+    //         user: req.session.user,
+    //         posts: posts,
+    //         success: req.flash("success").toString(),
+    //         error: req.flash("error").toString()
+    //     });
+    // });
 });
 
 router.get('/login', checkNotLogin);
@@ -71,7 +105,7 @@ router.get('/reg', function (req, res, next) {
     });
 });
 
-router.get('/reg', checkNotLogin);
+router.post('/reg', checkNotLogin);
 router.post('/reg', function (req, res, next) {
 
     var name = req.body.name;
@@ -155,19 +189,40 @@ router.get('/u/:name', function (req, res) {
             return res.redirect('/');
         }
 
-        Post.getAll(user.name, function (err, posts) {
+        var page = req.query.p ? parseInt(req.query.p) : 1;
+
+        Post.getTen(req.params.name, page, function (err, posts, total) {
             if (err) {
-                req.flash('error', err);
+                req.flash("error", err);
                 return res.redirect('/');
             }
+
             res.render('user', {
-                title: req.params.name,
+                title: user.name,
                 posts: posts,
+                page: page,
+                isFirstPage: (page - 1) == 0,
+                isLastPage: ((page - 1) * 10 + posts.length) == total,
                 user: req.session.user,
-                success: req.flash('success').toString(),
-                error: req.flash('error').toString()
+                success: req.flash("success").toString(),
+                error: req.flash("error").toString()
             });
         });
+
+
+        // Post.getAll(user.name, function (err, posts) {
+        //     if (err) {
+        //         req.flash('error', err);
+        //         return res.redirect('/');
+        //     }
+        //     res.render('user', {
+        //         title: req.params.name,
+        //         posts: posts,
+        //         user: req.session.user,
+        //         success: req.flash('success').toString(),
+        //         error: req.flash('error').toString()
+        //     });
+        // });
     });
 });
 
@@ -260,6 +315,25 @@ router.post('/u/:name/:day/:title', function (req, res) {
     });
 
 });
+
+router.post('/archive', checkLogin);
+router.get('/archive', function (req, res) {
+    Post.getArchive(function (err, posts) {
+        if (err) {
+            req.flash('error', err);
+            return res.redirect("/");
+        }
+
+        res.render('archive', {
+            title: '存档',
+            posts: posts,
+            user: req.session.user,
+            success: req.flash('success').toString(),
+            error: req.flash('error').toString()
+        });
+    });
+});
+
 
 function ret(name, req) {
     return {

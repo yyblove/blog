@@ -15,7 +15,6 @@ var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
 
 require('./modules/common');
-require('events').EventEmitter.prototype.maxListeners = 0;
 
 var app = express();
 
@@ -28,9 +27,7 @@ app.set('view engine', 'ejs');
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
-// app.use(bodyParser({keepExtensions:true, upload: './public/images'}));
 app.use(cookieParser());
-
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -45,13 +42,6 @@ app.use(session({
         url: 'mongodb://localhost/blog'
     })
 }));
-
-
-
-// app.get('/flash',function (req, res, next) {
-//     console.log('----flash-----');
-//     res.render('index', {title:req.flash('info', "hh")})
-// });
 
 app.use('/', routes);
 // app.use('/users', users);
