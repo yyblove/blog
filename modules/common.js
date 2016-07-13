@@ -4,5 +4,7 @@ global.TABLE= {
     TB_POST : 'post'
 };
 
+global.ERROR = 'error';
+global.SUCCESS = 'success';
 
 module.exports = {};
