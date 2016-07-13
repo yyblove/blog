@@ -154,7 +154,7 @@ router.post('/post', checkLogin);
 router.post('/post', function (req, res) {
     var currentUser = req.session.user;
     var tags = [req.body.tag1, req.body.tag2, req.body.tag3];
-    var post = new Post(currentUser.name, req.body.title, tags, req.body.post);
+    var post = new Post(currentUser.name, currentUser.head, req.body.title, tags, req.body.post);
     post.save(function (err) {
         if (err) {
             req.flash("error", err);
@@ -303,8 +303,13 @@ router.post('/u/:name/:day/:title', function (req, res) {
     var minutes = date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes();
 
     var time = year + "-" + month + "-" + day + " " + hours + ":" + minutes;
+    var md5 = cryto.createHash('md5');
+    console.log(req);
+    var email_md5 = md5.update(req.body.email.toLowerCase()).digest('hex');
+    var head = 'http://www.gravatar.com/avatar/' + email_md5 + '?s=48';
     var comment = {
         name: req.body.name,
+        head: head,
         email: req.body.email,
         website: req.body.website,
         time: time,

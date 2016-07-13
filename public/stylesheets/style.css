@@ -143,5 +143,19 @@ article a:hover {
     margin: 0.5em 0;
 }
 
+.l_read {
+    float: left;
+    margin-left: -4em;
+    -webkit-box-shadow: inset 0px 1px 4px #888;
+    -moz-box-shadow: inset 0px 1px 4px #888;
+    box-shadow: inset 0px 1px 4px #888;
+}
 
+.r_head {
+    float: right;
+    margin-top: -2.5em;
+    -webkit-box-shadow: inset 0px 1px 4px #888;
+    -moz-box-shadow: inset 0px 1px 4px #888;
+    box-shadow: inset 0px 1px 4px #888;
+}
 
