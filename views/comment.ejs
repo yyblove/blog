@@ -9,9 +9,9 @@
 
 <form method="post">
     <% if(user) { %>
-    姓名：<input type="text" name="name" value="<%= user.name %>"/> <br/>
-    邮箱：<input type="text" name="email" value="<%= user.email %>"/> <br/>
-    网址：<input type="text" name="website" value="/u/<%= user.name %>"/> <br/>
+    姓名：<input type="text" name="name" value="<%= user.name %>" disabled="disabled"/> <br/>
+    邮箱：<input type="text" name="email" value="<%= user.email %>" disabled="disabled"/> <br/>
+    网址：<input type="text" name="website" value="/u/<%= user.name %>" disabled="disabled"/> <br/>
     <% }else{ %>
     姓名：<input type="text" name="name"/><br/>
     邮箱：<input type="text" name="email"/><br/>

@@ -31,7 +31,8 @@ Post.prototype.save = function (callback) {
         title: this.title,
         tags: this.tags,
         post: this.post,
-        comments: []
+        comments: [],
+        pv: 0
     };
 
     mongodb.open(function (err, db) {
@@ -142,16 +143,31 @@ Post.getOne = function (name, day, title, callback) {
                 title: title,
                 "time.day": day
             }, function (err, doc) {
-                mongodb.close();
-                if (err) return callback(err);
+
+                if (err) {
+                    mongodb.close();
+                    return callback(err);
+                }
                 if (doc) {
-                    doc.post = markdown.toHTML(doc.post);
-                    if (doc.comments) {
-                        doc.comments.forEach(function (comment) {
-                            comment.content = markdown.toHTML(comment.content);
-                        });
-                    } else {
-                        doc.comments = [];
+                    collection.update({
+                        name: name,
+                        title: title,
+                        "time.day": day
+                    }, {$inc: {pv: 1}}, function (err) {
+                        mongodb.close();
+                        if (err) {
+                            return callback(err);
+                        }
+                    });
+                    if (doc) {
+                        doc.post = markdown.toHTML(doc.post);
+                        if (doc.comments) {
+                            doc.comments.forEach(function (comment) {
+                                comment.content = markdown.toHTML(comment.content);
+                            });
+                        } else {
+                            doc.comments = [];
+                        }
                     }
                 }
                 callback(null, doc);
@@ -288,6 +304,29 @@ Post.getTag = function (tag, callback) {
             }
 
             collection.find({tags: tag}, {name: 1, time: 1, title: 1})
+                .sort({time: -1}).toArray(function (err, docs) {
+                mongodb.close();
+                if (err) {
+                    return callback(err);
+                }
+                callback(null, docs);
+            });
+        });
+    });
+};
+
+Post.search = function (keyword, callback) {
+    mongodb.open(function (err, db) {
+        if (err) return callback(err);
+
+        db.collection(TABLE.TB_POST, function (err, collection) {
+            if (err) {
+                mongodb.close();
+                return callback(err);
+            }
+
+            var pattern = new RegExp("^.*" + keyword + ".*$", "i");
+            collection.find({title: pattern}, {name: 1, time: 1, title: 1})
                 .sort({time: -1}).toArray(function (err, docs) {
                 mongodb.close();
                 if (err) {

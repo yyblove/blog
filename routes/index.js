@@ -266,7 +266,7 @@ router.post('/edit/:name/:day/:title', function (req, res) {
 
     var tags = [req.body.tag1, req.body.tag2, req.body.tag3];
     console.log(tags);
-    Post.update(currentUser.name, req.params.day, req.params.title, req.body.post.trim(), tags ,function (err) {
+    Post.update(currentUser.name, req.params.day, req.params.title, req.body.post.trim(), tags, function (err) {
         var url = "/u/" + req.params.name + "/" + req.params.day + "/" + req.params.title;
         if (err) {
             req.flash("error", err);
@@ -371,6 +371,33 @@ router.get('/tags/:tag', function (req, res) {
             success: req.flash(SUCCESS).toString(),
             error: req.flash(ERROR).toString()
         });
+    });
+});
+
+router.get('/search', function (req, res) {
+    Post.search(req.query.keyword, function (err, posts) {
+        if (err) {
+            req.flash(ERROR, err);
+            return res.redirect('/');
+        }
+
+        res.render('search', {
+            title: "SEARCH: " + req.query.keyword,
+            posts: posts,
+            user: req.session.user,
+            success: req.flash(SUCCESS).toString(),
+            error: req.flash(ERROR).toString()
+        });
+
+    });
+});
+
+router.get('/links', function (req, res) {
+    res.render('links', {
+        title: '友情链接',
+        user: req.session.user,
+        success: req.flash(SUCCESS).toString(),
+        error: req.flash(ERROR).toString()
     });
 });
 
