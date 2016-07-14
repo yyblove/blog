@@ -34,6 +34,7 @@ Post.prototype.save = function (callback) {
         tags: this.tags,
         post: this.post,
         comments: [],
+        reprint_info: {},
         pv: 0
     };
 
@@ -156,7 +157,7 @@ Post.getOne = function (name, day, title, callback) {
                         title: title,
                         "time.day": day
                     }, {$inc: {pv: 1}}, function (err) {
-                        mongodb.close();
+                        // mongodb.close();
                         if (err) {
                             return callback(err);
                         }
@@ -172,6 +173,7 @@ Post.getOne = function (name, day, title, callback) {
                         }
                     }
                 }
+                mongodb.close();
                 callback(null, doc);
             });
         });
@@ -336,6 +338,86 @@ Post.search = function (keyword, callback) {
                 }
                 callback(null, docs);
             });
+        });
+    });
+};
+
+Post.reprint = function (reprint_from, reprint_to, callback) {
+    mongodb.open(function (err, db) {
+        if (err) {
+            return callback(err);
+        }
+        db.collection(TABLE.TB_POST, function (err, collection) {
+            if (err) {
+                mongodb.close();
+                return callback(err);
+            }
+            collection.findOne({
+                "name": reprint_from.name,
+                "time.day": reprint_from.day,
+                "title": reprint_from.title
+            }, function (err, doc) {
+                if (err) {
+                    mongodb.close();
+                    return callback(err);
+                }
+
+
+                var date = new Date();
+                var year = date.getFullYear();
+                var month = date.getMonth() < 9 ? '0' + (date.getMonth() + 1) : date.getMonth();
+                var day = date.getDate();
+                var hours = date.getHours();
+                var minutes = date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes();
+
+                var time = {
+                    date: date,
+                    year: year,
+                    month: year + "-" + month,
+                    day: year + "-" + month + "-" + day,
+                    minutes: year + "-" + month + "-" + day + " " + hours + ":" + minutes
+                };
+
+                delete doc._id;
+                doc.name = reprint_to.name;
+                doc.head = reprint_to.head;
+                doc.time = time;
+                doc.title = doc.title.search(/[转载]/ > -1) ? doc.title : "[转载]" + doc.title;
+                doc.comments = [];
+                doc.reprint_info = {"reprint_from": reprint_from};
+                doc.pv = 0;
+
+                collection.update({
+                    name: reprint_from.name,
+                    "time.day": reprint_from.day,
+                    title: reprint_from.title
+                }, {
+                    $push: {
+                        "reprint_info.reprint_to": {
+                            name: doc.name,
+                            day: time.day,
+                            title: doc.title
+                        }
+                    }
+                }, function (err) {
+                    if (err) {
+                        mongodb.close();
+                        return callback(err);
+                    }
+                });
+
+                collection.insert(doc, {safe:true}, function (err, post) {
+                    mongodb.close();
+                    if(err){
+                        return callback(err);
+                    }
+                    console.log(err);
+                    console.log(post);
+                    callback(null, post.ops[0]);
+                });
+
+            });
+
         });
     });
 };

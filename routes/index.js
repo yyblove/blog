@@ -406,6 +406,38 @@ router.get('/links', function (req, res) {
     });
 });
 
+router.get('/reprint/:name/:day/:title', checkLogin);
+router.get('/reprint/:name/:day/:title', function (req, res) {
+    Post.edit(req.params.name, req.params.day, req.params.title, function (err, post) {
+        if (err) {
+            req.flash(ERROR, err);
+            return res.redirect('back');
+        }
+
+        var currentUser = req.session.user,
+            reprint_from = {
+                name: post.name,
+                day: post.time.day,
+                title: post.title
+            },
+            reprint_to = {
+                name : currentUser.name,
+                head: currentUser.head
+            };
+        Post.reprint(reprint_from, reprint_to, function (err, post) {
+            if (err) {
+                req.flash(ERROR, err);
+                return res.redirect('back');
+            }
+
+            req.flash(SUCCESS, '转载成功！');
+            var url = '/u/' + post.name + '/' + post.time.day + '/' + post.title;
+            url = encodeURI(url);
+            res.redirect(url);
+        });
+    });
+});
+
 function ret(name, req) {
     return {
         title: name,
