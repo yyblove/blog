@@ -235,15 +235,52 @@ Post.remove = function (name, day, title, callback) {
                 mongodb.close();
                 return callback(err);
             }
-            collection.remove({
+
+            collection.findOne({
                 "name": name,
                 "title": title,
                 "time.day": day
-            }, {w: 1}, function (err) {
-                mongodb.close();
-                if (err)
+            }, function (err, doc) {
+                if (err) {
+                    mongodb.close();
                     return callback(err);
-                callback(null);
+                }
+
+                var reprint_from = "";
+                if(doc.reprint_info.reprint_from){
+                    reprint_from = doc.reprint_info.reprint_from;
+                }
+
+                if(reprint_from != ""){
+                    console.log("-----reprint_from-----");
+                    collection.update({
+                        "name": reprint_from.name,
+                        "title": reprint_from.title,
+                        "time.day": reprint_from.day
+                    }, {$pull:{"reprint_info.reprint_to":{
+                        "name": name,
+                        "day": day,
+                        "title": title
+                    }}}, function (err) {
+                        console.log("-----reprint_from-----213123");
+                        if (err) {
+                            mongodb.close();
+                            return callback(err);
+                        }
+                    });
+                }
+
+                collection.remove({
+                    "name": name,
+                    "title": title,
+                    "time.day": day
+                }, {w: 1}, function (err) {
+                    mongodb.close();
+                    if (err)
+                        return callback(err);
+                    callback(null);
+                });
+
             });
         });
     });
@@ -406,9 +443,9 @@ Post.reprint = function (reprint_from, reprint_to, callback) {
                     }
                 });
 
-                collection.insert(doc, {safe:true}, function (err, post) {
+                collection.insert(doc, {safe: true}, function (err, post) {
                     mongodb.close();
-                    if(err){
+                    if (err) {
                         return callback(err);
                     }
                     console.log(err);

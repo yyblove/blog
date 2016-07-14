@@ -306,7 +306,7 @@ router.post('/u/:name/:day/:title', function (req, res) {
     var md5 = cryto.createHash('md5');
     console.log(req);
     var email_md5 = md5.update(req.body.email.toLowerCase()).digest('hex');
-    var head = 'http://www.gravatar.com/avatar/' + email_md5 + '?s=48';
+    var head = 'http://gravatar.duoshuo.com/avatar/' + email_md5 + '?s=48';
     var comment = {
         name: req.body.name,
         head: head,
